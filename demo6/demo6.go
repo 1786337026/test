@@ -16,36 +16,47 @@ func main() {
 	var wg sync.WaitGroup
 	var lock sync.Mutex
 	ch := make(chan int)
-	var flag [30]bool
-	for num <= 10 {
-		num++
-		index++
-		wg.Add(1)
-		go func(idx int) {
-			flag[idx] = false
-			for i := 1; i <= K; i++ {
-				time.Sleep(time.Millisecond)
-				lock.Lock()
-				if sum >= M {
-					sum += i
-					ch <- i
-					flag[idx] = true
+	ch2 := make(chan int, 10)
+	var flag [100]bool
+	go func() {
+		for {
+			ch2 <- 1
+			index++
+			wg.Add(1)
+			go func(idx int) {
+				flag[idx] = false
+				for i := 1; i <= K; i++ {
+					sum++
+					//time.Sleep(time.Millisecond)
+					fmt.Printf("\b\b\b%d", sum)
+					//time.Sleep(time.Millisecond * 100)
+					lock.Lock()
+
+					// fmt.Println("sum:", sum)
+
+					if sum >= M {
+						ch <- i
+						flag[idx] = true
+						lock.Unlock()
+						break
+					}
 					lock.Unlock()
-					break
 				}
-				lock.Unlock()
-			}
-			if flag[idx] {
-				fmt.Println("the car-- ", idx, "Moved ", <-ch)
-				fmt.Println("______")
-			} else {
-				sum += 200
-				fmt.Println("the car--", idx, " Moved 200")
-			}
-			wg.Done()
-			num--
-		}(index)
-	}
+				//			fmt.Println("sum2:", sum)
+				if flag[idx] {
+					// fmt.Println("out")
+					fmt.Println("the car-- ", idx, "Moved ", <-ch)
+					// fmt.Println("______")
+				} else {
+					//				fmt.Println("sum1:", sum)
+					fmt.Println("the car--", idx, " Moved 200")
+				}
+				wg.Done()
+				<-ch
+			}(index)
+		}
+	}()
+	time.Sleep(time.Second)
 	wg.Wait()
 	close(ch)
 }
